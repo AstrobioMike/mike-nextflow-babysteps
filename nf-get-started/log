@@ -1,6 +1,0 @@
-makeblastdb -in input.faa -dbtype prot -out db/blastDB
-
-blastp -db db/blastDB -query input.faa -outfmt 6 > blast_result
-
-cat blast_result | head -n 10 | cut -f 2 > top_hits.txt
-
