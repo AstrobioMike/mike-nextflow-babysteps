@@ -86,11 +86,11 @@ if (params.help) {
 
 // }
 
-process fastqc {
+process FASTQC {
 
     tag "$name"
 
-    container "quay.io/biocontainers/fastqc:0.11.9--hdfd78af_1"
+    conda "config/software/conda-envs/QC.yaml"
 
     input:
         tuple val(name), path(reads)
@@ -112,7 +112,7 @@ workflow {
     input_reads = Channel.fromFilePairs( params.input_reads, size: params.single_end ? 1 : 2 ) { file -> file.name.replaceAll( /.fastq.gz|.fq.gz/,'' ) }
     // input_reads.view()
 
-    fastqc(input_reads)
+    FASTQC(input_reads)
 
     // num = channel.from( 1, 2, 3 )
     // input_reads = channel.fromPath(params.input_reads)
