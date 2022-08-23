@@ -90,8 +90,6 @@ process FASTQC {
 
     tag "$name"
 
-    conda "config/software/conda-envs/QC.yaml"
-
     input:
         tuple val(name), path(reads)
 
