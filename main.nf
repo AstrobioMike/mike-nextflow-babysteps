@@ -25,104 +25,50 @@ if (params.help) {
 /* --                PROCESSES                 -- */
 ////////////////////////////////////////////////////
 
-
-// process basicExample {
-    
-//     input:
-//         val num
-
-//     output:
-//         stdout
-
-//     "echo process job $num"
-
-// }
-
-
-// process REPORT {
-
-//     name = "REPORT"
-
-//     input:
-//         path input_reads
-
-//     output:
-//         stdout emit: stdout
-
-//     script:
-//         """
-//         echo "Doing stuff to $input_reads"
-//         echo "Process task name is $task.name"
-//         ls -l $input_reads
-//         """
-// }
-
-
-// process tupleExample {
-
-//     input:
-//         tuple val(x), path('latin.txt')
-
-//     """
-//     echo Processing $x
-//     cat - latin.txt > copy
-//     """
-
-// }
-
-
-// process foo {
-
-//     debug true
-
-//     input:
-//         val x
-//         val y
-
-//     script:
-//         """
-//         echo $x and $y
-//         """
-
-// }
-
-process FASTQC {
-
-    tag "$name"
-
-    input:
-        tuple val(name), path(reads)
-
-    output:
-        path "*_fastqc.{zip,html}"
-        
-
-    script:
-
-        """
-        fastqc $reads
-        """
-
-}
+include { FASTQC } from './modules/QC.nf'
 
 workflow {
 
-    input_reads = Channel.fromFilePairs( params.input_reads, size: params.single_end ? 1 : 2 ) { file -> file.name.replaceAll( /.fastq.gz|.fq.gz/,'' ) }
-    // input_reads.view()
+    ch_input_reads = Channel.fromFilePairs( params.input_reads, size: params.single_end ? 1 : 2 ) { file -> file.name.replaceAll( /.fastq.gz|.fq.gz/,'' ) }
+    // ch_input_reads | view
 
-    FASTQC(input_reads)
+    // ch_input_reads_var = ch_input_reads | flatten
+    // ch_input_reads_var | view
 
-    // num = channel.from( 1, 2, 3 )
-    // input_reads = channel.fromPath(params.input_reads)
-    // values = channel.from( [1, 'alpha'], [2, 'beta'], [3, 'delta'] )
 
-    // // REPORT(input_reads)
-    // // REPORT.out.stdout | view
+    // ch_input_reads.subscribe { $it[0] }
 
-    // // basicExample(num) | view
+    // reads_list_obj = ch_input_reads.toList().val[0]
+    // println reads_list_obj
 
-    // tupleExample(values)
+    // ch_input_reads | collect() | view
 
-    // foo( ch_x, ch_y )
+    // ch_input_reads | view
 
+    // mylist = [1,2,3]
+
+    // println mylist.getClass()
+
+
+    // println reads_list_obj
+
+    // println reads_list_obj.getClass()
+
+    // for ( entry in reads_list_obj ) {
+
+    //     println(entry[0])
+
+    // }
+
+    // reads_list_obj.getAt(0)
+
+    // out_file = file("samples.txt")
+
+    // out_file.text = 'stuff?'
+
+
+    // FASTQC(ch_input_reads)
+
+    // FASTQC.out.zip | view
+    
 }
