@@ -4,15 +4,14 @@
  */
 
 process FASTQC {
-    publishDir params.multiqc_outputs_dir, mode: 'link'
 
-    tag "$name"
+    tag "fastqc on: $name"
 
     input:
         tuple val(name), path(reads)
 
     output:
-        tuple val(name), path("${name}_fastqc.zip"), path("${name}_fastqc.html"), emit: zip
+        tuple val(name), path("${name}_fastqc.zip"), path("${name}_fastqc.html"), emit: fastqc
 
     script:
 
@@ -22,28 +21,69 @@ process FASTQC {
 
 }
 
-// process MULTIQC {
+process MULTIQC {
 
-//     input:
-//         path("samples.txt")
-//         path("mqc_in/*") // any number of multiqc compatible files
-//         path(multiqc_config)
+    tag "multiqc on: ${ params.MQCLabel }"
 
-//   output:
-//     path("${ params.MQCLabel }_multiqc_report/${ params.MQCLabel }_multiqc.html"), emit: html
-//     path("${ params.MQCLabel }_multiqc_report/${ params.MQCLabel }_multiqc_data"), emit: data
-//     path("${ params.MQCLabel }_multiqc_report.zip"), emit: zipped_report
-//     path("${ params.MQCLabel }_multiqc_report"), emit: unzipped_report
-//     path("versions.txt"), emit: version
+    publishDir params.multiqc_outputs_dir, mode: 'link'
 
-//   script:
-//     config_arg =  multiqc_config.name != "NO_FILE" ? "--config ${ multiqc_config }" : ""
-//     """
-//     multiqc --sample-names samples.txt  \
-//             --interactive -o ${ params.MQCLabel }_multiqc_report \
-//             -n ${ params.MQCLabel }_multiqc mqc_in \
-//             ${ config_arg }
-//     zip -r '${ params.MQCLabel }_multiqc_report.zip' '${ params.MQCLabel }_multiqc_report'
-//     multiqc --version > versions.txt
-//     """
-// }
+    input:
+        // path("samples.txt")
+        path("mqc_in/*") // any number of multiqc compatible files
+        // path(multiqc_config)
+
+    output:
+        path("${ params.MQCLabel }_multiqc.html"), emit: html
+        path("${ params.MQCLabel }_multiqc_report.zip"), emit: zipped_report
+
+    script:
+
+        """
+        multiqc --interactive -o ${ params.MQCLabel }_multiqc_report \
+                -n ${ params.MQCLabel }_multiqc mqc_in \
+
+        mv ${ params.MQCLabel }_multiqc_report/${ params.MQCLabel }_multiqc.html .
+        
+        zip -m -r '${ params.MQCLabel }_multiqc_report.zip' '${ params.MQCLabel }_multiqc_report'
+        """
+
+}
+
+process TRIMGALORE {
+
+    debug true
+
+    tag "trimgalore on: $name"
+
+    publishDir params.filtered_reads_dir, mode: 'link'
+
+    input:
+        tuple val(name), path(reads)
+
+    script:
+    
+        """
+        # this depends on the lib_type and then if paired-end or not
+        if [ ${params.lib_type} == 1 ]; then
+
+            if [ ${params.single_end} == 'true' ]; then
+
+                printf "    first lib type, single-end\n"
+
+            else
+
+                printf "    first lib type, paired-end\n"
+
+            fi
+        
+        elif [ ${params.lib_type} == 2 ]; then
+
+            printf "    second lib type\n"
+
+        elif [ ${params.lib_type} == 3 ]; then
+
+            printf "    third lib type\n"
+
+        fi
+        """
+}

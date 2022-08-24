@@ -22,19 +22,56 @@ if (params.help) {
 }
 
 ////////////////////////////////////////////////////
+/* --            PRE-FLIGHT CHECKS             -- */
+////////////////////////////////////////////////////
+
+// checking lib_type set in nextflow.config
+if ( params.lib_type !in params.accepted_lib_types ) {
+
+    println "\n    ${RED}No suitable 'lib_type' was set in nextflow.config.${NC}"
+    println "    Exiting for now.\n"
+
+    exit 1
+
+}
+
+
+
+////////////////////////////////////////////////////
 /* --                PROCESSES                 -- */
 ////////////////////////////////////////////////////
 
-include { FASTQC } from './modules/QC.nf'
+include { FASTQC as RAW_FASTQC } from './modules/QC.nf'
+include { MULTIQC as RAW_MULTIQC } from './modules/QC.nf' addParams(MQCLabel: "raw")
+include { TRIMGALORE } from './modules/QC.nf'
+
+
+////////////////////////////////////////////////////
+/* --                WORKFLOW                  -- */
+////////////////////////////////////////////////////
 
 workflow {
 
+    // detecting input reads and removing extensions from their unique sample names
     ch_input_reads = Channel.fromFilePairs( params.input_reads, size: params.single_end ? 1 : 2 ) { file -> file.name.replaceAll( /.fastq.gz|.fq.gz/,'' ) }
-    
 
-    reads_list_obj = ch_input_reads | map { it -> it[0] } 
-                                    | collectFile( name: 'samples.txt', newLine: true, storeDir: "./" )
+    // writing out unique sample names to file and setting to channel
+    ch_input_reads | map { it -> it[0] } |
+                     collectFile( name: 'samples.txt', newLine: true, storeDir: "./" ) |
+                     set { ch_samples_txt }
 
-    FASTQC(ch_input_reads)
-    
+    // // raw fastqc on input reads
+    // RAW_FASTQC(ch_input_reads)
+
+    // // getting all raw fastqc output files into one channel
+    // RAW_FASTQC.out.fastqc | map { it -> [ it[1], it[2]] } |
+    //                         flatten | collect | set { ch_raw_mqc_inputs }
+
+    // // multiqc on raw fastqc outputs
+    // RAW_MULTIQC( ch_raw_mqc_inputs )
+
+
+    // quality trimming/filtering input reads
+    TRIMGALORE( ch_input_reads )
+   
 }
